@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction }  from 'express';
 const axios = require('axios').default;
 
 const app = express();
@@ -13,6 +13,7 @@ app.listen(port, () => {
     timezoneName: string;
     timezoneAbbr: string;
     utcOffset: any; //Why is this interface only for return data? , how to add dynamicdata sets
+    country?: any; //Can be recieved or not.
   };
 
   interface postLoginreqresIN {
@@ -26,8 +27,15 @@ app.listen(port, () => {
 
   // not working interface...
   interface loginResult {
+    data?: any;
+    status?: number;
     token: string
   }
+
+class errorUser {
+  error: string
+}
+
 
   //how to define below functio as constant
   //function  getLocationsWithTimezones (request: Request, response: Response, next: NextFunction) {
@@ -38,7 +46,8 @@ app.listen(port, () => {
         location: 'Germany',
         timezoneName: 'Central European Time',
         timezoneAbbr: 'CET',
-        utcOffset: varb
+        utcOffset: varb,
+        country: 'IND'
       },
       {
         location: 'China',
@@ -63,24 +72,51 @@ app.listen(port, () => {
     response.status(200).json(locations);
   };
   // how define return type for this function? and inteface
-  async function getUsers(request: Request, response: Response, next: NextFunction)/*: Promise<User[]>*/ {
+//(req, resp, next)
+
+
+/* const getUsers1 = (request: Request, response: Response, next: NextFunction) :loginResult => {
+  let resp  = {token: 'hsy6s'};
+  return resp;
+}
+
+function getUsers(request: Request, response: Response, next: NextFunction) :loginResult {
+  let resp  = {token: 'hsy6s'};
+  return resp;
+} */
+
+  async function getUsers_old(request: Request, response: Response, next: NextFunction): Promise<Response> {
     let resp: loginResult = await axios.post('https://reqres.in/api/login', {
-      email: 'eve.holt@reqres.in',
-      password: 'cityslicka'
+      email: 'eve.holt@reqres.in',// get these from req of postaman
+      passwords: 'cityslicka'
     })
-    .then(function (response) {// what is this warning?
+    .then(function (response: any) {// what is this warning?
       console.log(response.data.token);
-      return response.data;
+      //let = getUsers();
+      //return 2;
+      return response;
     })
-    .catch(function (error) {
+    .catch(function (error: any) {
       console.log(error.response.data);
-      return error.response.data;
+      error.response.data = error.response.data.error + " Custom";
+      error.response.status = 400;
+      return error.response;
     });
-    return response.status(200).json(resp);
+
+
+    console.log(resp);
+    return response.status(resp.status).json(resp.data);
+    //return resp;
   }
+ 
   try {
-  app.get('/timezones', getLocationsWithTimezones);
-  app.post('/login', getUsers);
+    app.use(function (err, req, res, next) {
+      console.error(err.stack)
+      res.status(500).send('Something broke!')
+    })
+    app.get('/timezones', getLocationsWithTimezones);
+    app.post('/login', getUsers_old);
+    
   }
   catch (e) {
     //give wrong host URL but this is not coming to cacthc blcok
